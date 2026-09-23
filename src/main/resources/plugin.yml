@@ -1,0 +1,23 @@
+name: HavocOrders
+version: '${project.version}'
+main: net.eclipse.havocorders.HavocOrders
+api-version: '1.21'
+author: Eclipse
+description: Player-driven buy orders with a full chest-menu interface, Vault economy and sell-all support.
+softdepend: [Vault, PlaceholderAPI, HavocSpawners]
+commands:
+  orders:
+    description: Open the orders menu
+    usage: /orders [<search text>|reload|import]
+    aliases: [order, havocorders]
+  toggleorderalerts:
+    description: Toggle order delivery notifications
+    usage: /toggleorderalerts
+    aliases: [orderalerts]
+permissions:
+  havocorders.use:
+    description: Allows using /orders
+    default: true
+  havocorders.admin:
+    description: Allows /orders reload and bypassing order limits
+    default: op

@@ -1,0 +1,255 @@
+# =====================================================
+#              HavocOrders - config.yml
+# =====================================================
+# NOTE: never paste this file publicly with real credentials in it.
+
+DEBUG: false
+
+DATABASE:
+  TYPE: "SQLITE" # SQLITE or MYSQL
+  MYSQL:
+    HOST: "127.0.0.1"
+    PORT: 3306
+    DATABASE: "havocorders"
+    USER: "CHANGE_ME"
+    PASSWORD: "CHANGE_ME"
+    USE-SSL: false
+
+SETTINGS:
+  MIN-PRICE-AMOUNT: 1.0
+  MAX-PRICE-AMOUNT: 10000000.0
+  # Hard ceiling on amount x price, so nobody can post an order worth more than the
+  # economy can represent. 0 disables the check.
+  MAX-ORDER-VALUE: 1000000000.0
+  MIN-ITEM-AMOUNT: 1
+  # Bulk orders are fine - the plugin never materialises this many item stacks at once.
+  MAX-ITEM-AMOUNT: 1000000
+  # Active orders one player may hold at once. 0 = unlimited.
+  MAX-ORDERS-PER-PLAYER: 0
+  EXPIRE-DAYS: 7
+  # Charge the full order value up front and hold it in escrow.
+  # Deliverers are paid out of that escrow; unspent escrow is refunded on cancel/expiry.
+  ESCROW: true
+  CURRENCY-SYMBOL: "$"
+  SAVE-INTERVAL-SECONDS: 30
+  # Re-read config.yml and dialogs.yml when they change on disk, so edits apply without
+  # a restart. 0 disables the watcher. Note this reloads settings and menu text only -
+  # it does not touch orders, listings or money.
+  RELOAD-WATCH-SECONDS: 5
+  # On startup, add any settings a plugin update introduced into your existing
+  # config.yml and dialogs.yml. Your values are never changed and nothing is removed;
+  # the previous file is kept as config.yml.bak. Turn off only if you manage the files
+  # yourself and would rather paste new keys in by hand.
+  AUTO-UPDATE-CONFIG: true
+  EXPIRY-CHECK-SECONDS: 60
+  # Show 1.23m instead of 1,230,000. Input always accepts both forms.
+  ABBREVIATE-NUMBERS: true
+
+  # Entries shown per page. These must match the number of CONTENT-SLOTS on the
+  # matching menu in menus.yml, or the extras simply have nowhere to be drawn.
+  ORDERS-PER-PAGE: 21
+  ITEMS-PER-PAGE: 21
+  COLLECT-PER-PAGE: 21
+  ENCHANTS:
+    # Let players ask for enchantments that do not normally go on the item, and for
+    # levels above the vanilla maximum.
+    ALLOW-UNSAFE: false
+    MAX-UNSAFE-LEVEL: 10
+  # How a delivered item is judged against what was ordered.
+  MATCHING:
+    # AT-LEAST: the item must have at least the enchantments ordered, at that level or
+    #           higher, and may carry extras. EXACT: the enchantments must match exactly.
+    ENCHANTMENTS: "AT-LEAST"
+    # Ignore how worn an item is. Needed for anything with durability - an elytra a player
+    # has actually flown will never match a pristine one otherwise.
+    IGNORE-DAMAGE: true
+    # Refuse items below this much durability, as a percentage. 0 accepts anything.
+    MIN-DURABILITY-PERCENT: 0
+  SHULKERS:
+    # Count and pull items out of shulker boxes the player is carrying.
+    DELIVER-FROM-SHULKERS: true
+    # How long a player's inventory scan is reused for display, in milliseconds.
+    # Reading a shulker's contents is expensive and the board asks once per visible
+    # order, so this stops a screen redraw from unpacking every carried box 20 times.
+    # Deliveries always re-scan, so this never affects what actually moves.
+    CACHE-MILLIS: 1000
+
+  # Safety valve for "Drop All" - dropped items are spread over several ticks
+  # so a huge payout cannot stall the server.
+  DROP:
+    # Stacks released per tick. Stacks are generated as they are dropped, so a
+    # million-item payout costs the same memory as a single-item one.
+    MAX-STACKS-PER-TICK: 24
+    # Safety ceiling on a single drop action. 0 = no limit.
+    MAX-TOTAL-STACKS: 0
+    # How many pages the "Drop N Pages" button covers.
+    PAGE-BATCH: 5
+
+# Prices used by the "Sell All" button in the Collect Items menu.
+SELL:
+  ENABLED: true
+  # Fallback price per item when the material has no entry below. 0 = not sellable.
+  DEFAULT-PRICE: 0.0
+  # Multiplier applied on top of the resolved price.
+  MULTIPLIER: 1.0
+  PRICES:
+    DIAMOND: 100.0
+    NETHERITE_INGOT: 1000.0
+    EMERALD: 40.0
+    GOLD_INGOT: 25.0
+    IRON_INGOT: 15.0
+    COPPER_INGOT: 5.0
+    LAPIS_LAZULI: 8.0
+    REDSTONE: 5.0
+    COAL: 3.0
+    ANCIENT_DEBRIS: 500.0
+    ENCHANTED_GOLDEN_APPLE: 750.0
+    GOLDEN_APPLE: 80.0
+    TOTEM_OF_UNDYING: 400.0
+    ELYTRA: 1200.0
+    NETHER_STAR: 2000.0
+    SHULKER_SHELL: 150.0
+
+# Migration from the original DonutOrders plugin.
+# Drop its orders.db into this folder as the FILE below and start the server, or run
+# /orders import. Importing is idempotent: legacy ids map to fixed ids, so re-running
+# skips anything already present.
+#
+# The importer never pays anyone and never drops loot. Delivered and paid figures come
+# across as history only, because the old plugin already moved that money - refunding it
+# again here would create currency out of nothing. Uncollected items stay owed and appear
+# in the collect screen as normal.
+#
+# Remove the old plugin before importing, so both are not running against one economy.
+IMPORT:
+  ENABLED: true
+  FILE: "import.db"
+  # Legacy dates are stored as text.
+  DATE-FORMAT: "dd/MM/yyyy HH:mm:ss"
+  # Blank uses the server's own timezone. Set this if the old server ran elsewhere.
+  TIMEZONE: ""
+  EXPIRY:
+    # EXTEND: orders that already expired get a fresh window and stay live.
+    # KEEP:   they import as expired. Loot is still collectable, but no refund is
+    #         issued, because the old plugin was responsible for that.
+    MODE: EXTEND
+    EXTEND-DAYS: 7
+  # The original plugin charged order value up front and refunded undelivered items on
+  # cancel, so by default imported orders are treated as escrowed and will refund normally.
+  # Set this to false if your old setup did NOT hold that money - otherwise cancelling an
+  # imported order pays out currency nobody ever paid in.
+  ESCROW-ALREADY-HELD: true
+  # Carries over each player's "notify me on delivery" choice.
+  IMPORT-PROFILES: true
+  # Renames the file to *.imported afterwards so a restart does not re-read it.
+  RENAME-WHEN-DONE: true
+
+# Ordering spawners from HavocSpawners.
+#
+# Only spawners an admin has explicitly allowed can be ordered. Allow one by holding it
+# and running /orders spawners add <id> [display name] - the item itself is captured, so
+# the template always matches what HavocSpawners hands out.
+#
+# Matching ignores a spawner's stored loot, stored experience and stack size, since those
+# drift while the spawner is used and would otherwise make two identical spawners look
+# like different items.
+SPAWNERS:
+  ENABLED: true
+  # Treat a level 3 spawner as a different item from a level 1.
+  MATCH-LEVEL: true
+  # Refuse to accept a spawner that still holds loot or experience. Orders hand the buyer
+  # a clean copy, so accepting a full one would quietly delete the contents.
+  REQUIRE-EMPTY-STORAGE: true
+  # Refuse stacked spawners, so one delivery is always one spawner.
+  REQUIRE-SINGLE: true
+
+ITEM-RESTRICTIONS:
+  BLOCKED-ITEMS:
+    - "COMMAND_BLOCK"
+    - "CHAIN_COMMAND_BLOCK"
+    - "REPEATING_COMMAND_BLOCK"
+    - "COMMAND_BLOCK_MINECART"
+    - "STRUCTURE_BLOCK"
+    - "STRUCTURE_VOID"
+    - "JIGSAW"
+    - "BARRIER"
+    - "LIGHT"
+    - "BEDROCK"
+    - "END_PORTAL_FRAME"
+    - "SPAWNER"
+    - "DEBUG_STICK"
+    - "KNOWLEDGE_BOOK"
+
+# Text substituted into the *_status placeholders: green ON, red OFF.
+#
+# This string renders inside whatever menu plugin reads the placeholder, not here, so it
+# has to match that plugin's colour format. MiniMessage is the default because a settings
+# menu using <item:...> tags is MiniMessage-based. If the toggles show a literal
+# "<green>ON", comment these two out and uncomment one of the alternatives below.
+PLACEHOLDERS:
+  ENABLED-TEXT: "<green>ON"
+  DISABLED-TEXT: "<red>OFF"
+  # Legacy colour codes:
+  # ENABLED-TEXT: "&aON"
+  # DISABLED-TEXT: "&cOFF"
+  # Already-translated section signs:
+  # ENABLED-TEXT: "\u00a7aON"
+  # DISABLED-TEXT: "\u00a7cOFF"
+
+# Bedrock (Geyser/Floodgate) compatibility.
+# Chest menus render natively on Bedrock, so the only gap is the font: the small-caps
+# glyphs the menus use are not in it and show as boxes. Those are rewritten to plain
+# ASCII for Bedrock players only, so Java players are unaffected.
+# Detection needs Floodgate; without it everyone is treated as Java.
+BEDROCK:
+  ASCII-LABELS: true
+
+MESSAGES:
+  PREFIX: ""
+  SEARCH-USE-COMMAND: "&#f40d0dSearch box came back empty. Try &f/orders search <text>&#f40d0d instead."
+  PROMPT-CHAT: "&#f40d0dType the {label} in chat, or 'cancel'."
+  NO-PERMISSION: "&#f40d0dYou don't have permission to do that."
+  PLAYERS-ONLY: "&#f40d0dThis command can only be used by players."
+  RELOADED: "&#f40d0dConfiguration reloaded."
+  NO-ECONOMY: "&#f40d0dNo Vault economy provider is installed - orders are disabled."
+  INVALID-AMOUNT: "&#f40d0dInvalid amount."
+  INVALID-PRICE: "&#f40d0dInvalid price."
+  PRICE-TOO-LOW: "&#f40d0dThe minimum price is ${min}."
+  PRICE-TOO-HIGH: "&#f40d0dThe maximum price is ${max}."
+  ORDER-TOO-EXPENSIVE: "&#f40d0dThat order would cost ${total}. The limit is ${max}."
+  AMOUNT-TOO-LOW: "&#f40d0dThe minimum amount is {min}."
+  AMOUNT-TOO-HIGH: "&#f40d0dThe maximum amount is {max}."
+  BLOCKED-ITEM: "&#f40d0dThat item cannot be ordered."
+  NO-ITEM-SELECTED: "&#f40d0dPick an item first."
+  NOT-ENOUGH-MONEY: "&#f40d0dYou need ${total} to place that order."
+  ORDERED: "&#f40d0dYou ordered {amount} {item}"
+  ORDER-CANCELLED: "&#f40d0dYou cancelled the order successfully"
+  MAX_ORDERS_REACHED: "&#f40d0dYou can't have more than {max} active orders at once."
+  DELIVERED: "&#f40d0dYou delivered {amount} {item} and received ${received}"
+  DELIVERY_RECEIVED: "&#f40d0d{deliverer} delivered {amount} {item} to your order!"
+  NOTHING-TO-DELIVER: "&#f40d0dYou don't have any matching items to deliver."
+  OWN-ORDER: "&#f40d0dYou cannot deliver to your own order."
+  REFUND-ISSUED: "&#f40d0dYou have been refunded ${refund} for undelivered items"
+  REFUND-ERROR: "&#f40d0dError processing your refund"
+  NO-REFUND: "&#f40d0dNo refund was issued because all items were delivered"
+  EXPIRED: "&#f40d0dYour order for {amount} {item} expired."
+  COLLECTED: "&#f40d0dYou collected {amount} {item}."
+  SELL_ALL_SOLD: "&#f40d0dYou sold items for ${total}."
+  SELL-DISABLED: "&#f40d0dSelling is disabled on this server."
+  SELL-NOTHING: "&#f40d0dNone of your collected items can be sold."
+  DROPPED-ALL: "&#f40d0dDropped {amount} items at your feet."
+  ALERTS-ON: "&#f40d0dYou will be told when someone delivers to your orders."
+  ALERTS-OFF: "&#f40d0dDelivery notifications turned off."
+  ORDER_DELETED: "&#f40d0dThis order has been cancelled and no longer exists."
+  ORDER_NO_LONGER_VALID: "&#f40d0dThis order is no longer accepting deliveries."
+  ORDER_FULL: "&#f40d0dThis order is already complete."
+  CANCEL-NOT-ALLOWED-PENDING-COLLECTION: "&#f40d0dYou cannot cancel the order: {amount} items to collect."
+  DROPPING: "&#f40d0dDropping {amount} items..."
+  DROP-CAPPED: "&#f40d0dDropped the first {amount} stacks - run it again for the rest."
+  UNSUPPORTED-CLIENT: "&#f40d0dYour client is too old for this menu. Use 1.21.6 or newer."
+  COLLECT:
+    NOTHING_TO_COLLECT: "&#f40d0dNo items available for collection."
+    ITEM_ERROR: "&#f40d0dERROR: Could not load item data"
+    INVENTORY_FULL: "&#f40d0dPlease make space in your inventory first!"
+    SUCCESS: "&#f40d0d+{amount} {item} collected to your inventory"
+    PARTIAL_COLLECTION: "&#f40d0dOnly collected {collected} out of {total} items due to inventory space."
