@@ -47,9 +47,9 @@ SETTINGS:
 
   # Entries shown per page. These must match the number of CONTENT-SLOTS on the
   # matching menu in menus.yml, or the extras simply have nowhere to be drawn.
-  ORDERS-PER-PAGE: 21
-  ITEMS-PER-PAGE: 21
-  COLLECT-PER-PAGE: 21
+  ORDERS-PER-PAGE: 45
+  ITEMS-PER-PAGE: 45
+  COLLECT-PER-PAGE: 45
   ENCHANTS:
     # Let players ask for enchantments that do not normally go on the item, and for
     # levels above the vanilla maximum.

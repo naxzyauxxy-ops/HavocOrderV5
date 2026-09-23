@@ -142,20 +142,35 @@ public class Gui {
                 : (layout == null ? -1 : layout.getInt("INFO-SLOT", -1));
         if (slot < 0 || slot >= size || view.buttonAt(slot) != null) return;
 
-        Material material = Material.matchMaterial(
-                layout.getString("INFO-MATERIAL", "PAPER"));
+        ConfigurationSection items = layout.getConfigurationSection("ITEMS");
+        ConfigurationSection info = items == null ? null : items.getConfigurationSection("INFO");
+
+        String materialName = info != null
+                ? info.getString("MATERIAL", layout.getString("INFO-MATERIAL", "PAPER"))
+                : layout.getString("INFO-MATERIAL", "PAPER");
+        Material material = Material.matchMaterial(materialName);
+
+        // The listed item wins over a configured material: showing the actual item is
+        // always more use than a sheet of paper.
         ItemStack base = screen.bodyIcon() != null
                 ? screen.bodyIcon().clone()
                 : new ItemStack(material == null ? Material.PAPER : material);
 
+        String name = info != null
+                ? info.getString("NAME", info.getString("LABEL", screen.title()))
+                : screen.title();
+
         inventory.setItem(slot, ItemBuilder.of(base)
-                .name(screen.style().text(screen.title()))
+                .name(screen.style().text(name))
                 .lore(body)
                 .build());
     }
 
     private void fill(ConfigurationSection layout, Inventory inventory) {
-        if (layout == null || !layout.getBoolean("FILL", true)) return;
+        // Menus that lay themselves out with a pattern usually want empty slots to stay
+        // empty; FILL is opt-in there.
+        boolean patterned = layout != null && !layout.getStringList("STRUCTURE").isEmpty();
+        if (layout == null || !layout.getBoolean("FILL", !patterned)) return;
         ConfigurationSection filler = layout.getConfigurationSection("FILLER");
 
         String materialName = filler == null

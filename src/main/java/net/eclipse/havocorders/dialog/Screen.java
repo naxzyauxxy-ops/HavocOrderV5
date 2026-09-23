@@ -141,15 +141,34 @@ public abstract class Screen {
     protected ScreenModel.Button configButton(String key, Map<String, String> placeholders,
                                               ItemStack icon, ScreenModel.Action action) {
         ConfigurationSection section = button(key);
-        String label = section == null ? key : section.getString("LABEL", key);
-        List<String> tooltip = section == null ? List.of() : section.getStringList("TOOLTIP");
+        // NAME/LORE and LABEL/TOOLTIP both work. The first pair is the convention most
+        // menu configs use for item entries; the second reads better for plain buttons.
+        String label = key;
+        List<String> tooltip = List.of();
+        if (section != null) {
+            label = section.getString("NAME", section.getString("LABEL", key));
+            tooltip = section.isList("LORE")
+                    ? section.getStringList("LORE")
+                    : section.getStringList("TOOLTIP");
+        }
         Material configured = section == null ? null
                 : Material.matchMaterial(section.getString("MATERIAL", ""));
         Material fallback = configured != null ? configured : defaultIcon(key);
 
+        // A placeholder may expand to several lines - the sort and filter buttons use
+        // this to list every option with the active one marked.
+        List<String> resolved = new java.util.ArrayList<>();
+        for (String line : Text.applyPruned(tooltip, common(placeholders))) {
+            if (line.indexOf('\n') < 0) {
+                resolved.add(line);
+                continue;
+            }
+            java.util.Collections.addAll(resolved, line.split("\n", -1));
+        }
+
         return ScreenModel.Button.of(key,
                 style().text(Text.apply(label, common(placeholders))),
-                style().text(Text.applyPruned(tooltip, common(placeholders))),
+                style().text(resolved),
                 icon, fallback, action);
     }
 
